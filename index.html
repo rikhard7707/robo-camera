@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detecção de Rosto</title>
+
+<!-- Carrega a biblioteca face-api.js direto da internet -->
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #222;
+    color: white;
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+  video {
+    border: 2px solid white;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Detecção de Rosto</h1>
+<video id="video" width="720" height="560" autoplay muted></video>
+
+<script>
+  // Inicia a webcam
+  async function startVideo() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+    document.getElementById('video').srcObject = stream;
+  }
+
+  // Carrega o modelo de detecção
+  Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri('/models')
+  ]).then(startVideo);
+
+  // Detecta o rosto continuamente
+  document.getElementById('video').addEventListener('play', () => {
+    const canvas = faceapi.createCanvasFromMedia(document.getElementById('video'));
+    document.body.append(canvas);
+    const displaySize = { width: 720, height: 560 };
+    faceapi.matchDimensions(canvas, displaySize);
+
+    setInterval(async () => {
+      const detections = await faceapi.detectAllFaces(
+        document.getElementById('video'),
+        new faceapi.TinyFaceDetectorOptions()
+      );
+      const resizedDetections = faceapi.resizeResults(detections, displaySize);
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      faceapi.draw.drawDetections(canvas, resizedDetections);
+    }, 100);
+  });
+</script>
+
+</body>
+</html>
+
